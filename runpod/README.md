@@ -178,7 +178,8 @@ python scripts/measure_move_agreement.py \
   --eval-file /workspace/work/nets/goingawall1_eval.nnue \
   --moves data/goingawall1/player_moves.jsonl \
   --limit 500 \
-  --depth 6
+  --depth 6 \
+  --progress-every 10
 ```
 
 Good iteration loop:
@@ -207,6 +208,20 @@ RUN_NAME=ft_lr1e-4_e2 LR=1e-4 MAX_EPOCHS=2 bash runpod/finetune_sfnnv5_from_defa
 
 Keep the run that improves agreement without producing obviously strange opening or tactical choices.
 
+Once `LR=1e-5`, `MAX_EPOCHS=5`, `LAMBDA=0.2` looks best, sweep close to it:
+
+```bash
+bash runpod/sweep_finetune_sfnnv5.sh
+```
+
+This runs:
+
+- `LR=5e-6`, `MAX_EPOCHS=5`, `LAMBDA=0.2`
+- `LR=1e-5`, `MAX_EPOCHS=8`, `LAMBDA=0.2`
+- `LR=2e-5`, `MAX_EPOCHS=5`, `LAMBDA=0.2`
+- `LR=1e-5`, `MAX_EPOCHS=5`, `LAMBDA=0.1`
+- `LR=1e-5`, `MAX_EPOCHS=5`, `LAMBDA=0.4`
+
 Useful knobs:
 
 - `MAX_EPOCHS`: more training time.
@@ -217,6 +232,7 @@ Useful knobs:
 - `FEATURES`, `L1`, `L2`, `L3`: must match the Stockfish binary architecture. The current script defaults to the SFNNv5-compatible settings expected by the `tools` branch binary: `HalfKAv2_hm^`, `L1=1024`, `L2=15`, `L3=32`.
 - `FT_COMPRESSION=none`: safest for the older `tools` branch Stockfish binary. Current `nnue-pytorch` defaults to LEB128 compression, which may not load in older engine builds.
 - `--depth` in `measure_move_agreement.py`: higher is slower but closer to real engine choice.
+- `--movetime-ms` in `measure_move_agreement.py`: use this instead of depth for bounded-time comparisons.
 
 Do not judge the net only by move agreement. A personal NNUE should also avoid collapsing into bad chess, so track both agreement and practical game quality.
 
