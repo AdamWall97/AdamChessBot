@@ -222,6 +222,40 @@ This runs:
 - `LR=1e-5`, `MAX_EPOCHS=5`, `LAMBDA=0.1`
 - `LR=1e-5`, `MAX_EPOCHS=5`, `LAMBDA=0.4`
 
+## Preference Fine-Tuning
+
+The evaluator-only fine-tuning can plateau and still pick odd alternatives. The next step directly trains from `preference_pairs.jsonl`:
+
+```bash
+cp /workspace/work/nets/ft_lr1e-5_e8_l02.nnue /workspace/work/nets/goingawall1_current_best.nnue
+
+RUN_NAME=pref_alpha08_lr1e-6_e2_s300 \
+PREF_LR=1e-6 \
+PREF_EPOCHS=2 \
+PREF_STEPS=300 \
+PREF_BATCH_SIZE=512 \
+ALPHA=0.8 \
+bash runpod/train_preference_sfnnv5.sh
+```
+
+This optimizes:
+
+```text
+total_loss = 0.8 * preference_loss + 0.2 * teacher_distillation_loss
+```
+
+`preference_loss` rewards the position after your chosen move over the position after a sampled legal alternative. `teacher_distillation_loss` keeps the net close to the base net so it does not forget normal chess.
+
+Good first preference sweep:
+
+```bash
+RUN_NAME=pref_alpha08_lr5e-7_e2_s300 PREF_LR=5e-7 PREF_EPOCHS=2 PREF_STEPS=300 bash runpod/train_preference_sfnnv5.sh
+RUN_NAME=pref_alpha08_lr1e-6_e2_s300 PREF_LR=1e-6 PREF_EPOCHS=2 PREF_STEPS=300 bash runpod/train_preference_sfnnv5.sh
+RUN_NAME=pref_alpha08_lr2e-6_e2_s300 PREF_LR=2e-6 PREF_EPOCHS=2 PREF_STEPS=300 bash runpod/train_preference_sfnnv5.sh
+```
+
+If the move agreement improves without strange start-position behavior, increase `PREF_STEPS` before increasing the learning rate.
+
 Useful knobs:
 
 - `MAX_EPOCHS`: more training time.
