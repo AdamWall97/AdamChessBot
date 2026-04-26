@@ -86,7 +86,9 @@ If it fits and runs cleanly, increase to:
 MAX_EPOCHS=40 EPOCH_SIZE=200000 BATCH_SIZE=8192 bash runpod/train_stockfish_eval_nnue.sh
 ```
 
-Create a GPU pod from a PyTorch/CUDA template, attach enough disk for the repo plus build artifacts, then run:
+The RunPod PyTorch template `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04` should work well. It already includes Ubuntu 22.04, Python 3.11, PyTorch 2.4.0, and CUDA 12.4.1, while the `devel` image includes the compiler/toolchain pieces we want for building Stockfish and the NNUE data loader.
+
+Create a GPU pod from that PyTorch/CUDA template, attach enough disk for the repo plus build artifacts, then run:
 
 ```bash
 git clone <your-repo-url> /workspace/chess_v4
