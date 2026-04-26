@@ -189,11 +189,41 @@ Good iteration loop:
 4. Play a few short games against the net.
 5. Change one training variable at a time.
 
+The best next experiment is to fine-tune from the compatible default Stockfish net instead of training from scratch:
+
+```bash
+bash runpod/finetune_sfnnv5_from_default.sh
+```
+
+This downloads `nn-3c0aa92af1da.nnue`, converts it to a PyTorch model, fine-tunes it on `personal.binpack`, serializes a new `.nnue`, smoke-tests it, and measures agreement from move 7 onward.
+
+Good first sweep:
+
+```bash
+RUN_NAME=ft_lr1e-5_e2 LR=1e-5 MAX_EPOCHS=2 bash runpod/finetune_sfnnv5_from_default.sh
+RUN_NAME=ft_lr5e-5_e2 LR=5e-5 MAX_EPOCHS=2 bash runpod/finetune_sfnnv5_from_default.sh
+RUN_NAME=ft_lr1e-4_e2 LR=1e-4 MAX_EPOCHS=2 bash runpod/finetune_sfnnv5_from_default.sh
+```
+
+Keep the run that improves agreement without producing obviously strange opening or tactical choices.
+
 Useful knobs:
 
 - `MAX_EPOCHS`: more training time.
 - `EPOCH_SIZE`: more batches per epoch.
 - `BATCH_SIZE`: larger if VRAM allows.
+- `NETWORK_SAVE_PERIOD`: save checkpoints less often to reduce disk usage.
+- `SAVE_LAST_NETWORK=False`: avoids an extra `last.ckpt` copy.
+- `FEATURES`, `L1`, `L2`, `L3`: must match the Stockfish binary architecture. The current script defaults to the SFNNv5-compatible settings expected by the `tools` branch binary: `HalfKAv2_hm^`, `L1=1024`, `L2=15`, `L3=32`.
+- `FT_COMPRESSION=none`: safest for the older `tools` branch Stockfish binary. Current `nnue-pytorch` defaults to LEB128 compression, which may not load in older engine builds.
 - `--depth` in `measure_move_agreement.py`: higher is slower but closer to real engine choice.
 
 Do not judge the net only by move agreement. A personal NNUE should also avoid collapsing into bad chess, so track both agreement and practical game quality.
+
+If Stockfish rejects a serialized `.nnue`, inspect the checkpoint before retrying serialization:
+
+```bash
+python scripts/inspect_nnue_checkpoint.py /path/to/checkpoint.ckpt --expect-sfnnv5
+```
+
+For the `tools` branch binary with default `nn-3c0aa92af1da.nnue`, the checkpoint should have one input feature weight with shape `[24576, 1032]`, `l1.linear.weight` shape `[128, 1024]`, and `l2.linear.weight` shape `[256, 30]`.

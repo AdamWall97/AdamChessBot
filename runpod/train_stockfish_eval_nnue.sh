@@ -17,7 +17,13 @@ MAX_EPOCHS="${MAX_EPOCHS:-40}"
 EPOCH_SIZE="${EPOCH_SIZE:-200000}"
 BATCH_SIZE="${BATCH_SIZE:-8192}"
 NETWORK_SAVE_PERIOD="${NETWORK_SAVE_PERIOD:-5}"
+SAVE_LAST_NETWORK="${SAVE_LAST_NETWORK:-False}"
 GPUS="${GPUS:-0}"
+FEATURES="${FEATURES:-HalfKAv2_hm^}"
+L1="${L1:-1024}"
+L2="${L2:-15}"
+L3="${L3:-32}"
+FT_COMPRESSION="${FT_COMPRESSION:-none}"
 
 if [ ! -f "$PLAIN_FILE" ]; then
   echo "Missing plain training file: $PLAIN_FILE" >&2
@@ -77,6 +83,11 @@ python train.py "$BINPACK_FILE" \
   --batch-size "$BATCH_SIZE" \
   --validation-size 0 \
   --network-save-period "$NETWORK_SAVE_PERIOD" \
+  --save-last-network "$SAVE_LAST_NETWORK" \
+  --features "$FEATURES" \
+  --l1 "$L1" \
+  --l2 "$L2" \
+  --l3 "$L3" \
   --gpus "$GPUS" \
   --accelerator cuda
 
@@ -87,6 +98,11 @@ if [ -z "$LATEST_CKPT" ]; then
 fi
 
 python serialize.py "$LATEST_CKPT" "$OUT_NNUE" \
+  --features "$FEATURES" \
+  --l1 "$L1" \
+  --l2 "$L2" \
+  --l3 "$L3" \
+  --ft-compression "$FT_COMPRESSION" \
   --description "goingawall1 eval baseline from Chess.com games"
 
 echo "Wrote $OUT_NNUE"
