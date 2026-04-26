@@ -17,6 +17,30 @@ cd "$NNUE_DIR"
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
+python - <<'PY'
+from pathlib import Path
+
+path = Path("data_loader/_native.py")
+text = path.read_text()
+text = text.replace(
+    "type SparseBatchPtr = ctypes._Pointer[SparseBatch]",
+    "SparseBatchPtr = ctypes.POINTER(SparseBatch)",
+)
+text = text.replace(
+    "type FenBatchPtr = ctypes._Pointer[FenBatch]",
+    "FenBatchPtr = ctypes.POINTER(FenBatch)",
+)
+text = text.replace(
+    "SparseBatchPtr = ctypes._Pointer[SparseBatch]",
+    "SparseBatchPtr = ctypes.POINTER(SparseBatch)",
+)
+text = text.replace(
+    "FenBatchPtr = ctypes._Pointer[FenBatch]",
+    "FenBatchPtr = ctypes.POINTER(FenBatch)",
+)
+path.write_text(text)
+PY
+
 if [ -x ./setup_script.sh ]; then
   bash ./setup_script.sh
 else

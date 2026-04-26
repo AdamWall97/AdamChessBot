@@ -47,6 +47,29 @@ fi
 
 cd "$NNUE_DIR"
 
+if ! compgen -G "$NNUE_DIR/build/*training_data_loader.*" > /dev/null; then
+  echo "Missing nnue-pytorch native data loader. Building it now..."
+  if [ -x ./compile_data_loader.sh ]; then
+    bash ./compile_data_loader.sh "$BINPACK_FILE"
+  else
+    echo "Missing compile_data_loader.sh in $NNUE_DIR" >&2
+    exit 1
+  fi
+fi
+
+if ! compgen -G "$NNUE_DIR/build/*training_data_loader.*" > /dev/null \
+  && compgen -G "$NNUE_DIR/*training_data_loader.*" > /dev/null; then
+  echo "Copying data loader shared library into build/ for _native.py"
+  mkdir -p "$NNUE_DIR/build"
+  cp "$NNUE_DIR"/*training_data_loader.* "$NNUE_DIR/build/"
+fi
+
+if ! compgen -G "$NNUE_DIR/build/*training_data_loader.*" > /dev/null; then
+  echo "Still cannot find build/*training_data_loader.* after compile." >&2
+  find "$NNUE_DIR" -name '*training_data_loader*' -type f -maxdepth 4 >&2 || true
+  exit 1
+fi
+
 python train.py "$BINPACK_FILE" \
   --default-root-dir "$RUN_DIR" \
   --max-epochs "$MAX_EPOCHS" \

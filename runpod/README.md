@@ -86,7 +86,29 @@ If it fits and runs cleanly, increase to:
 MAX_EPOCHS=40 EPOCH_SIZE=200000 BATCH_SIZE=8192 bash runpod/train_stockfish_eval_nnue.sh
 ```
 
-The RunPod PyTorch template `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04` should work well. It already includes Ubuntu 22.04, Python 3.11, PyTorch 2.4.0, and CUDA 12.4.1, while the `devel` image includes the compiler/toolchain pieces we want for building Stockfish and the NNUE data loader.
+Use a Python 3.12 PyTorch image if possible. Current `official-stockfish/nnue-pytorch` uses Python 3.12 syntax, so older RunPod templates like `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04` can fail unless patched.
+
+Best container image:
+
+```text
+nvcr.io/nvidia/pytorch:25.03-py3
+```
+
+That is the base image used by the official `nnue-pytorch` NVIDIA Dockerfile. On RunPod, create a custom template with this container image, or use the closest available PyTorch template that has Python 3.12 and CUDA 12.x.
+
+For custom templates, set the container start command to keep the pod alive:
+
+```text
+sleep infinity
+```
+
+or:
+
+```text
+/bin/bash -lc "sleep infinity"
+```
+
+Without a long-running start command, the container can exit immediately and SSH will fail with `container ... is not running`.
 
 Create a GPU pod from that PyTorch/CUDA template, attach enough disk for the repo plus build artifacts, then run:
 
@@ -139,3 +161,39 @@ Default output location:
   nets/
     goingawall1_eval.nnue
 ```
+
+## Iterating And Testing
+
+After each training run, first confirm Stockfish can load the net:
+
+```bash
+bash runpod/test_nnue_smoke.sh /workspace/work/nets/goingawall1_eval.nnue
+```
+
+Then measure move agreement against your actual Chess.com moves:
+
+```bash
+python scripts/measure_move_agreement.py \
+  --stockfish /workspace/work/Stockfish-tools/src/stockfish \
+  --eval-file /workspace/work/nets/goingawall1_eval.nnue \
+  --moves data/goingawall1/player_moves.jsonl \
+  --limit 500 \
+  --depth 6
+```
+
+Good iteration loop:
+
+1. Train a net.
+2. Smoke-test that Stockfish can load it.
+3. Measure move agreement.
+4. Play a few short games against the net.
+5. Change one training variable at a time.
+
+Useful knobs:
+
+- `MAX_EPOCHS`: more training time.
+- `EPOCH_SIZE`: more batches per epoch.
+- `BATCH_SIZE`: larger if VRAM allows.
+- `--depth` in `measure_move_agreement.py`: higher is slower but closer to real engine choice.
+
+Do not judge the net only by move agreement. A personal NNUE should also avoid collapsing into bad chess, so track both agreement and practical game quality.
