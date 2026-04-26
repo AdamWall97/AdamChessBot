@@ -57,6 +57,7 @@ if [ ! -f "$DEFAULT_NET" ]; then
 fi
 
 cd "$NNUE_DIR"
+export PYTHONPATH="$NNUE_DIR:${PYTHONPATH:-}"
 
 if [ "$BASE_NNUE" = "$DEFAULT_NET" ] && [ -f "$DEFAULT_PT" ]; then
   cp "$DEFAULT_PT" "$BASE_PT"
