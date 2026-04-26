@@ -220,6 +220,21 @@ Useful knobs:
 
 Do not judge the net only by move agreement. A personal NNUE should also avoid collapsing into bad chess, so track both agreement and practical game quality.
 
+Compare several nets on exactly the same positions:
+
+```bash
+bash runpod/compare_nnue_agreement.sh
+```
+
+or:
+
+```bash
+LIMIT=1000 DEPTH=8 MIN_PLY=12 bash runpod/compare_nnue_agreement.sh \
+  default=nn-3c0aa92af1da.nnue \
+  scratch=/workspace/work/nets/goingawall1_sfnnv5_fixed.nnue \
+  ft_best=/workspace/work/nets/ft_best_e5.nnue
+```
+
 If Stockfish rejects a serialized `.nnue`, inspect the checkpoint before retrying serialization:
 
 ```bash
